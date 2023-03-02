@@ -5,6 +5,8 @@ import ProductDisplay from './components/ProductDisplay';
 import TableTest from './components/TableTest';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './components/Login';
+import DemoForm from './components/DemoForm';
+import AddProductType from './components/AddProductType';
 
 function App() {
 
@@ -12,6 +14,8 @@ function App() {
 
   return (
     <>
+      {/* <AddProductType /> */}
+      {/* <DemoForm /> */}
       {/* <ProductDisplay /> */}
       {/* <EditRowTable /> */}
       {/* <TableTest /> */}

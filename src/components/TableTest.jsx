@@ -2,8 +2,9 @@ import '../App.css';
 import { useEffect, useState } from 'react';
 import axios from "axios"
 import { BaseImgUrl, BaseUrl } from "../environment";
-import { Form, InputNumber, Popconfirm, Typography, Input, Space, Table, Card, Button, Dropdown, Avatar, Tag } from 'antd';
+import { Form, InputNumber, Popconfirm, Typography, Input, Space, Table, Card, Button, Dropdown, Avatar, Tag, Upload } from 'antd';
 import { EditTwoTone, DeleteTwoTone, EditOutlined, DeleteOutlined, UserOutlined, SmileOutlined, CloseOutlined, CheckOutlined } from '@ant-design/icons';
+import AddProductType from './AddProductType';
 const { Text } = Typography;
 
 
@@ -15,16 +16,9 @@ const TableTest = () => {
   const [form] = Form.useForm()
   const [products, setProducts] = useState([])
   const [editingId, setEditingId] = useState('')
-  const [image, setImage] = useState("")
-  const [editingIndex, setEditingIndex] = useState(null)
-  const [editFormData, setEditFormData] = useState({
-    id: '',
-    category_id: '99',
-    title: '',
-    description: '',
-    price: '',
-    product_image: ''
-  })
+  const [image, setImage] = useState(null)
+  const [addRowId, setAddRowId] = useState('')
+
 
   const isEditing = (record) => record.id === editingId;
 
@@ -36,7 +30,6 @@ const TableTest = () => {
       })
       .catch(err => console.log(err))
   }, [])
-
 
   /* 处理修改当前行数据时的input样式及校验 */
   const EditableCell = ({ editing, dataIndex, title, inputType, record, index, children, ...restProps }) => {
@@ -61,24 +54,50 @@ const TableTest = () => {
     );
   };
 
+  /* 处理添加或者修改方法 */
+  const handleAddorEditMethod = (record) => {
+    if (record.id > 1) {
+      editSubmit(record)
+    } else {
+      addSubmit(record)
+    }
+  }
+
+  const handleCancel = () => {
+    if (addRowId) {
+      const index = products.findIndex((product) => addRowId === product.id);
+      products.splice(index, 1)
+      setAddRowId('')
+    }
+    setEditingId('')
+    setProducts([...products])
+    form.resetFields()
+  }
 
   /* 表格数据的增删改操作 */
   const handleAddProductType = () => {
-    const newData = {
-      id: `${Math.random()}`,
-      title: "aa",
-      description: "",
-      price: ""
-    };
-    setProducts([newData, ...products]);
-    setEditingId(newData.id);
-    console.log("handleAddProductType")
+    if (!addRowId) {
+      const newData = {
+        id: `${Math.random()}`,
+        // title: null,
+        // description: null,
+        // price: null
+      }
+      setAddRowId(newData.id)
+      setEditingId(newData.id);
+      setProducts([newData, ...products]);
+    } else {
+      const index = products.findIndex((product) => addRowId === product.id);
+      products.splice(index, 1)
+      setAddRowId('')
+      setEditingId('')
+      setProducts([...products])
+    }
   }
 
   /* 提交新增数据 */
-  const addSubmit = async (record) => {
+  const addSubmit = async () => {
     const row = await form.validateFields();
-
     const userToken = localStorage.getItem('react-demo-token')
     const config = {
       headers: {
@@ -146,6 +165,7 @@ const TableTest = () => {
         newData.splice(index, 1, res.data);
         setProducts(newData)
         setEditingId('')
+        form.resetFields()
         console.log("edit success")
       })
       .catch(err => console.log(err))
@@ -163,16 +183,7 @@ const TableTest = () => {
     console.log("handleEditOrderType")
   }
 
-  const handleAddorEditMethod = (record) => {
-    if (record.id > 1) {
-      editSubmit(record)
-    } else {
-      addSubmit(record)
-    }
-  }
-
-  const handleCancel = () => setEditingId('')
-
+  const handlePageChangeCancel = () => setEditingId('')
 
   /* 用户 Menu 的处理 */
   const handleLogOut = () => {
@@ -223,7 +234,6 @@ const TableTest = () => {
     },
   ];
 
-
   /* Table表格需要提供的columns数据 */
   const columns = [
     {
@@ -256,7 +266,7 @@ const TableTest = () => {
         const editable = isEditing(record);
         return editable ? (
           <Space>
-            <Button type='text' onClick={() => handleAddorEditMethod(record)}>
+            <Button type='text' onClick={() => editSubmit(record)}>
               <CheckOutlined style={iconStyle} />
             </Button>
             {/* <Popconfirm title="Are you sure to delete this task?" description={<br />} okText="Yes" cancelText="No" onConfirm={() => { handleEditCancel(record.id) }}> */}
@@ -290,7 +300,8 @@ const TableTest = () => {
       ...col,
       onCell: (record) => ({
         record,
-        inputType: col.dataIndex === 'price' ? 'number' : 'text',
+        // inputType: col.dataIndex === 'price' ? 'number' : 'text',
+        inputType: col.dataIndex === 'product_image' ? <Upload /> : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditing(record),
@@ -298,10 +309,8 @@ const TableTest = () => {
     };
   });
 
-
   /* 扩展表格相关的内容 */
   const expandedRowRender = () => {
-
     const data = [];
     // for (let i = 0; i < 3; ++i) {
     data.push({
@@ -341,7 +350,6 @@ const TableTest = () => {
       },
     ];
 
-
     return <Table columns={columns} dataSource={data} pagination={false} />;
   };
 
@@ -353,17 +361,24 @@ const TableTest = () => {
         <Avatar size="large" icon={<UserOutlined />} style={{ backgroundColor: 'skyblue' }} />
       </Dropdown>
       <h1>Product Type Management</h1>
-      <Button type='primary' style={{ marginBottom: "0.5rem" }} onClick={handleAddProductType}>
-        Add New
-      </Button>
+      <Space>
+        {/* <Button type='primary' style={{ marginBottom: "0.5rem" }} onClick={handleAddProductType}>
+          Add New
+        </Button> */}
+      </Space>
+
       <Form form={form} component={false}>
+        <AddProductType
+          products={products}
+          setProducts={setProducts}
+        />
         <Table
           rowKey="id"
           dataSource={products}
           columns={mergedColumns}
           expandable={{ expandedRowRender }}
           components={{ body: { cell: EditableCell } }}
-          pagination={{ onChange: handleCancel, defaultPageSize: 5, showSizeChanger: true, pageSizeOptions: [5, 10, 20, 50] }}
+          pagination={{ onChange: handlePageChangeCancel, defaultPageSize: 5, showSizeChanger: true, pageSizeOptions: [5, 10, 20, 50], total: products.length, showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items` }}
         />
       </Form>
     </Card>

@@ -1,0 +1,116 @@
+import { PlusOutlined } from '@ant-design/icons';
+import { Button, Form, Input, InputNumber, Space, Upload, Collapse, Card } from 'antd';
+import axios from 'axios';
+import { useState } from 'react';
+import { BaseUrl } from '../environment';
+const { TextArea } = Input;
+const { Panel } = Collapse;
+
+
+
+const AddProductType = ({ products, setProducts }) => {
+
+  const [form] = Form.useForm()
+
+  const [addedSwitch, setAddedSwitch] = useState(false)
+  const [image, setImage] = useState(null)
+
+  const handleAddRowProductType = () => setAddedSwitch(!addedSwitch)
+
+  const handleAddSubmit = async () => {
+    const row = await form.validateFields();
+    const userToken = localStorage.getItem('react-demo-token')
+    const config = {
+      headers: {
+        token: userToken
+      }
+    }
+
+    const formData = new FormData()
+    formData.append('category_id', 99)
+    row.title && formData.append('title', row.title)
+    row.description && formData.append('description', row.description)
+    row.price && formData.append('price', row.price)
+    image && formData.append('product_image', image)
+
+    axios.post(`${BaseUrl}products`, formData, config)
+      .then(res => {
+        const newData = [res.data, ...products];
+        setProducts(newData)
+        setAddedSwitch(!addedSwitch)
+        form.resetFields()
+        console.log("add success")
+      })
+      .catch(err => console.log(err))
+  }
+
+  const handleAddCancel = () => {
+    setAddedSwitch(!addedSwitch)
+    form.resetFields()
+  }
+
+  return (
+    <>
+      <Button type='primary' onClick={handleAddRowProductType}>
+        Add New
+      </Button>
+
+      <Collapse ghost activeKey={addedSwitch && "1"}>
+        <Panel showArrow={false} key="1">
+          <Card>
+            <Form
+              form={form}
+              labelCol={{ span: 4 }}
+              layout="horizontal"
+              style={{ maxWidth: 600 }}
+            >
+              <Form.Item label="Title" name="title" rules={[
+                {
+                  required: true,
+                  message: `Please Input title!`
+                }
+              ]}>
+                <Input />
+              </Form.Item>
+              <Form.Item label="Description" name="description" rules={[
+                {
+                  required: true,
+                  message: `Please Input description!`
+                }
+              ]}>
+                <TextArea rows={4} />
+              </Form.Item>
+              <Form.Item label="Price" name="price" rules={[
+                {
+                  required: true,
+                  message: `Please Input price!`
+                }
+              ]}>
+                <InputNumber />
+              </Form.Item>
+              <Form.Item label="Upload" valuePropName="fileList" name="product_image">
+                <Upload listType="picture-card">
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>
+                      Upload
+                    </div>
+                  </div>
+                </Upload>
+              </Form.Item>
+              <Form.Item wrapperCol={{ offset: 4 }}>
+                <Space>
+                  <Button type='primary' onClick={handleAddSubmit}>Submit</Button>
+                  <Button type='primary' onClick={handleAddCancel}>Cancel</Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          </Card>
+        </Panel>
+
+      </Collapse>
+    </>
+  );
+};
+
+export default AddProductType
