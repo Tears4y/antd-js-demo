@@ -1,12 +1,10 @@
 
 import './App.css';
-import EditRowTable from './components/EditRowTable';
-import ProductDisplay from './components/ProductDisplay';
-import TableTest from './components/TableTest';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './components/Login';
-import DemoForm from './components/DemoForm';
-import AddProductType from './components/AddProductType';
+import ProductTypeDisplay from './components/ProductTypeDisplay';
+
+
 
 function App() {
 
@@ -14,16 +12,11 @@ function App() {
 
   return (
     <>
-      {/* <AddProductType /> */}
-      {/* <DemoForm /> */}
-      {/* <ProductDisplay /> */}
-      {/* <EditRowTable /> */}
-      {/* <TableTest /> */}
       <Router>
         <Routes>
           {
             auth ? (
-              <Route path="/" element={<TableTest />} />
+              <Route path="/" element={<ProductTypeDisplay />} />
             ) : (
               <Route path="/login" element={<Login />} />
             )

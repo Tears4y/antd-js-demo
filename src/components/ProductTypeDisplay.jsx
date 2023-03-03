@@ -1,15 +1,16 @@
 import '../App.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from "axios"
 import { BaseImgUrl, BaseUrl } from "../environment";
 import { Form, InputNumber, Popconfirm, Typography, Input, Space, Table, Card, Button, Dropdown, Avatar, Tag, Upload } from 'antd';
 import { EditTwoTone, DeleteTwoTone, EditOutlined, DeleteOutlined, UserOutlined, SmileOutlined, CloseOutlined, CheckOutlined } from '@ant-design/icons';
 import AddProductType from './AddProductType';
+import TestDemo from './TestDemo';
 const { Text } = Typography;
 
 
 
-const TableTest = () => {
+const ProductTypeDisplay = () => {
 
   const iconStyle = { fontSize: "1.4rem" }
 
@@ -17,27 +18,31 @@ const TableTest = () => {
   const [products, setProducts] = useState([])
   const [editingId, setEditingId] = useState('')
   const [image, setImage] = useState(null)
-  const [addRowId, setAddRowId] = useState('')
-
+  const [disable, setDisable] = useState(true)
 
   const isEditing = (record) => record.id === editingId;
 
   useEffect(() => {
     axios.get(`${BaseUrl}products`)
       .then(res => {
-        // console.log(res.data)
         setProducts(res.data)
       })
       .catch(err => console.log(err))
   }, [])
 
+
   /* 处理修改当前行数据时的input样式及校验 */
   const EditableCell = ({ editing, dataIndex, title, inputType, record, index, children, ...restProps }) => {
+
     const inputNode = inputType === 'number' ? <InputNumber /> : <Input />;
+
     return (
       <td {...restProps}>
         {editing ? (
-          <Form.Item name={dataIndex} style={{ margin: 0 }}
+          <Form.Item
+            name={dataIndex}
+            style={{ margin: 0 }}
+            onChange={onTextChange}
             rules={[
               {
                 required: true,
@@ -54,75 +59,34 @@ const TableTest = () => {
     );
   };
 
-  /* 处理添加或者修改方法 */
-  const handleAddorEditMethod = (record) => {
-    if (record.id > 1) {
-      editSubmit(record)
-    } else {
-      addSubmit(record)
-    }
+  const onTextChange = () => {
+    setDisable(false);
+    console.log("textChange")
   }
 
   const handleCancel = () => {
-    if (addRowId) {
-      const index = products.findIndex((product) => addRowId === product.id);
-      products.splice(index, 1)
-      setAddRowId('')
-    }
+    setDisable(true)
     setEditingId('')
-    setProducts([...products])
-    form.resetFields()
   }
 
-  /* 表格数据的增删改操作 */
-  const handleAddProductType = () => {
-    if (!addRowId) {
-      const newData = {
-        id: `${Math.random()}`,
-        // title: null,
-        // description: null,
-        // price: null
-      }
-      setAddRowId(newData.id)
-      setEditingId(newData.id);
-      setProducts([newData, ...products]);
-    } else {
-      const index = products.findIndex((product) => addRowId === product.id);
-      products.splice(index, 1)
-      setAddRowId('')
-      setEditingId('')
-      setProducts([...products])
-    }
-  }
+  /* 在可编辑行table当中生成添加新数据的input表单 */
+  // const handleAddProductType = () => {
+  //   if (!addRowId) {
+  //     const newData = { id: `${Math.random()}` }
+  //     setAddRowId(newData.id)
+  //     setEditingId(newData.id);
+  //     setProducts([newData, ...products]);
+  //   } else {
+  //     const index = products.findIndex((product) => addRowId === product.id);
+  //     products.splice(index, 1)
+  //     setAddRowId('')
+  //     setEditingId('')
+  //     setProducts([...products])
+  //   }
+  // }
 
-  /* 提交新增数据 */
-  const addSubmit = async () => {
-    const row = await form.validateFields();
-    const userToken = localStorage.getItem('react-demo-token')
-    const config = {
-      headers: {
-        token: userToken
-      }
-    }
 
-    const formData = new FormData()
-    formData.append('category_id', 99)
-    row.title && formData.append('title', row.title)
-    row.description && formData.append('description', row.description)
-    row.price && formData.append('price', row.price)
-    image && formData.append('product_image', image)
-
-    axios.post(`${BaseUrl}products`, formData, config)
-      .then(res => {
-        const newData = [res.data, ...products];
-        setProducts(newData)
-        setEditingId('')
-        console.log("add success")
-      })
-      .catch(err => console.log(err))
-  };
-
-  /* 提交删除数据 */
+  /* 删除数据相关 */
   const handleDelProductType = (record) => {
     const userToken = localStorage.getItem('react-demo-token')
     const config = {
@@ -142,12 +106,13 @@ const TableTest = () => {
       .catch((err) => console.log(err))
   }
 
+
+  /* 修改数据相关 */
   const handleEditProductType = (record) => {
     form.setFieldsValue({ ...record });
     setEditingId(record.id);
   };
 
-  /* 提交修改数据 */
   const editSubmit = async (record) => {
     const row = await form.validateFields();
     const formData = new FormData()
@@ -165,7 +130,7 @@ const TableTest = () => {
         newData.splice(index, 1, res.data);
         setProducts(newData)
         setEditingId('')
-        form.resetFields()
+        setDisable(true)
         console.log("edit success")
       })
       .catch(err => console.log(err))
@@ -183,7 +148,6 @@ const TableTest = () => {
     console.log("handleEditOrderType")
   }
 
-  const handlePageChangeCancel = () => setEditingId('')
 
   /* 用户 Menu 的处理 */
   const handleLogOut = () => {
@@ -234,6 +198,7 @@ const TableTest = () => {
     },
   ];
 
+
   /* Table表格需要提供的columns数据 */
   const columns = [
     {
@@ -266,23 +231,25 @@ const TableTest = () => {
         const editable = isEditing(record);
         return editable ? (
           <Space>
-            <Button type='text' onClick={() => editSubmit(record)}>
+            <Button type='text' disabled={disable} onClick={() => editSubmit(record)}>
               <CheckOutlined style={iconStyle} />
             </Button>
-            {/* <Popconfirm title="Are you sure to delete this task?" description={<br />} okText="Yes" cancelText="No" onConfirm={() => { handleEditCancel(record.id) }}> */}
+
             <Button type='text' onClick={handleCancel}>
               <CloseOutlined style={iconStyle} />
             </Button>
-            {/* </Popconfirm> */}
+
           </Space>
         ) : (
           <Space >
             <Button type="text" disabled={editingId !== ''} onClick={() => handleEditProductType(record)}>
               <EditOutlined style={iconStyle} />
             </Button>
-            <Button type="text" disabled={editingId !== ''} onClick={() => handleDelProductType(record)}>
-              <DeleteOutlined style={iconStyle} />
-            </Button>
+            <Popconfirm title="Are you sure to delete this product?" description={<br />} okText="Yes" cancelText="No" onConfirm={() => handleDelProductType(record)}>
+              <Button type="text" disabled={editingId !== ''} >
+                <DeleteOutlined style={iconStyle} />
+              </Button>
+            </Popconfirm>
             <Button type="dashed" disabled={editingId !== ''} onClick={handleAddOrderType}>
               Add Order
             </Button>
@@ -300,14 +267,14 @@ const TableTest = () => {
       ...col,
       onCell: (record) => ({
         record,
-        // inputType: col.dataIndex === 'price' ? 'number' : 'text',
-        inputType: col.dataIndex === 'product_image' ? <Upload /> : 'text',
+        inputType: col.dataIndex === 'price' ? 'number' : 'text',
         dataIndex: col.dataIndex,
         title: col.title,
         editing: isEditing(record),
       }),
     };
   });
+
 
   /* 扩展表格相关的内容 */
   const expandedRowRender = () => {
@@ -357,15 +324,11 @@ const TableTest = () => {
 
   return (
     <Card>
+      {/* <TestDemo /> */}
       <Dropdown menu={{ items }}>
         <Avatar size="large" icon={<UserOutlined />} style={{ backgroundColor: 'skyblue' }} />
       </Dropdown>
       <h1>Product Type Management</h1>
-      <Space>
-        {/* <Button type='primary' style={{ marginBottom: "0.5rem" }} onClick={handleAddProductType}>
-          Add New
-        </Button> */}
-      </Space>
 
       <Form form={form} component={false}>
         <AddProductType
@@ -378,11 +341,11 @@ const TableTest = () => {
           columns={mergedColumns}
           expandable={{ expandedRowRender }}
           components={{ body: { cell: EditableCell } }}
-          pagination={{ onChange: handlePageChangeCancel, defaultPageSize: 5, showSizeChanger: true, pageSizeOptions: [5, 10, 20, 50], total: products.length, showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items` }}
+          pagination={{ onChange: handleCancel, defaultPageSize: 5, showSizeChanger: true, pageSizeOptions: [5, 10, 20, 50], total: products.length, showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items` }}
         />
       </Form>
     </Card>
   )
 }
 
-export default TableTest
+export default ProductTypeDisplay

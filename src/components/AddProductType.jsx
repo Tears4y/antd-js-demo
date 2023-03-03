@@ -1,8 +1,8 @@
-import { PlusOutlined } from '@ant-design/icons';
-import { Button, Form, Input, InputNumber, Space, Upload, Collapse, Card } from 'antd';
+import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { Button, Form, Input, InputNumber, Space, Upload, Collapse, Card, message } from 'antd';
 import axios from 'axios';
 import { useState } from 'react';
-import { BaseUrl } from '../environment';
+import { BaseImgUrl, BaseUrl } from '../environment';
 const { TextArea } = Input;
 const { Panel } = Collapse;
 
@@ -14,6 +14,7 @@ const AddProductType = ({ products, setProducts }) => {
 
   const [addedSwitch, setAddedSwitch] = useState(false)
   const [image, setImage] = useState(null)
+  const [fileList, setFileList] = useState([])
 
   const handleAddRowProductType = () => setAddedSwitch(!addedSwitch)
 
@@ -47,7 +48,12 @@ const AddProductType = ({ products, setProducts }) => {
   const handleAddCancel = () => {
     setAddedSwitch(!addedSwitch)
     form.resetFields()
+    setFileList([])
   }
+
+  const handleAddImg = ({ fileList: newFileList }) => setFileList(newFileList);
+
+
 
   return (
     <>
@@ -88,8 +94,13 @@ const AddProductType = ({ products, setProducts }) => {
               ]}>
                 <InputNumber />
               </Form.Item>
-              <Form.Item label="Upload" valuePropName="fileList" name="product_image">
-                <Upload listType="picture-card">
+              <Form.Item label="Photo" name="product_image" >
+                <Upload
+                  action={BaseImgUrl}
+                  listType='picture-card'
+                  fileList={fileList}
+                  onChange={handleAddImg}
+                >
                   <div>
                     <PlusOutlined />
                     <div style={{ marginTop: 8 }}>
